@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set a Number - Alien Alchemic Tech</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1b1b1b;
+            color: #fff;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3em;
+            color: #00ffae;
+            text-shadow: 0 0 10px #00ffae, 0 0 20px #00ffa9;
+        }
+
+        .current-number {
+            font-size: 4em;
+            color: #ff00e5;
+            margin: 20px 0;
+            text-shadow: 0 0 15px #ff00e5, 0 0 30px #ff00e1;
+        }
+
+        input, button {
+            padding: 15px;
+            font-size: 1.5em;
+            background: #242424;
+            color: #fff;
+            border: 3px solid #00ffae;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px #00ffae;
+        }
+
+        input:hover, button:hover {
+            background: #111111;
+            border-color: #ff00e5;
+            text-shadow: 0 0 10px #ff00e5;
+        }
+
+        #loading {
+            display: none;
+            font-size: 2em;
+            color: #ffffff;
+            text-shadow: 0 0 10px #fff;
+        }
+
+        /* Kaleidoscopic Animation */
+        .kaleidoscope {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(59, 240, 4, 0.849), rgba(180, 4, 255, 0.7));
+            animation: kaleidoscope 0.2s infinite linear;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.1;
+        }
+
+        @keyframes kaleidoscope {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Sacred Geometry */
+        .sacred-geometry {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Metatron_cube_formation_with_flower_of_life_outline.gif/800px-Metatron_cube_formation_with_flower_of_life_outline.gif');
+            background-size: cover;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        /* Flashbang Effect */
+        .flashbang {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 3s ease;
+        }
+
+        /* Flashbang active state */
+        .flashbang.active {
+            opacity: 2;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="kaleidoscope"></div>
+    <div class="sacred-geometry"></div>
+    
+    <h1>Set a Number</h1>
+    <div class="current-number" id="currentNumber">Current Number: --</div>
+    <button id="connectWallet">Connect Wallet</button>
+    <input type="number" id="inputNumber" placeholder="Enter a number" />
+    <button id="setNumber">Set Number</button>
+    <div class="loading" id="loading">Loading...</div>
+    
+    <div class="flashbang" id="flashbang"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script>
+        let provider, signer, contract;
+
+        const contractAddress = '0xa912a6B7D19bE734DdBF2b97c4ff7CE535a8FCE8';
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "input",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "setNum",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "num",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        const connectWalletButton = document.getElementById('connectWallet');
+        const setNumberButton = document.getElementById('setNumber');
+        const loadingIndicator = document.getElementById('loading');
+        const currentNumberDisplay = document.getElementById('currentNumber');
+        const flashbang = document.getElementById('flashbang');
+
+        // Connect MetaMask
+        connectWalletButton.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send('eth_requestAccounts', []);  // Request access to the user's wallet
+                signer = await provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                // Update current number
+                updateCurrentNumber();
+            } else {
+                alert('MetaMask is not installed!');
+            }
+        });
+
+        // Set number in the contract
+        setNumberButton.addEventListener('click', async () => {
+            const inputNumber = document.getElementById('inputNumber').value;
+
+            if (!contract || inputNumber === '') {
+                alert('Please connect your wallet and enter a number');
+                return;
+            }
+
+            loadingIndicator.style.display = 'block';  // Show loading animation
+
+            try {
+                const tx = await contract.setNum(ethers.toBigInt(inputNumber));  // Send transaction
+                await tx.wait();  // Wait for transaction to be confirmed
+
+                updateCurrentNumber();  // Update number after setting
+            } catch (error) {
+                console.error(error);
+            } finally {
+                loadingIndicator.style.display = 'none';  // Hide loading animation
+            }
+        });
+
+        // Update the current number displayed on the page
+        async function updateCurrentNumber() {
+            if (contract) {
+                const currentNum = await contract.num();  // Get current number from the contract
+                currentNumberDisplay.textContent = `Current Number: ${currentNum}`;
+            }
+        }
+
+        // Flashbang effect on mouse click
+        window.addEventListener('click', () => {
+            flashbang.classList.add('active');
+            setTimeout(() => {
+                flashbang.classList.remove('active');
+            }, 200);  // Short flash
+        });
+    </script>
+</body>
+</html>
